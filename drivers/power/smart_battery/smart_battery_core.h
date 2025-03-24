@@ -44,6 +44,7 @@
 			pr_debug("%s: %s: " fmt, chg->name,	\
 				__func__, ##__VA_ARGS__);	\
 	} while (0)
+#define MAX_STR_LEN 64
 
 struct mmi_battery_pack {
 	int	status;
@@ -115,6 +116,7 @@ struct mmi_smart_battery {
 	int				vbatt_low_cold_mv;
 	int				batt_cold_threshold;
 	const char		**gauge_name_arry;
+	char			battName[MAX_STR_LEN];
 	struct mmi_battery_pack *battery;
 #ifdef CONFIG_MOTO_1200_CYCLE
 	int				bat_cycle_count;

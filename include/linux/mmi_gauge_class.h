@@ -51,6 +51,7 @@ struct gauge_ops {
 	int (*get_soh)(struct gauge_device *gauge_dev, int *soh);
 	int (*get_cycle_count)(struct gauge_device *gauge_dev, int *cycle_count);
 	int (*get_battid)(struct gauge_device *gauge_dev, char *battid);
+	int (*get_battname)(struct gauge_device *gauge_dev, char *battname);
 	int (*set_temperature)(struct gauge_device *gauge_dev, int temp);
 	int (*set_capacity)(struct gauge_device *gauge_dev, int soc);
 	int (*set_charge_type)(struct gauge_device *gauge_dev, int charge_type);
@@ -104,6 +105,8 @@ extern int gauge_dev_get_charge_full_design(struct gauge_device *gauge_dev, int 
 extern int gauge_dev_get_soh(struct gauge_device *gauge_dev, int *soh);
 
 extern int gauge_dev_get_battid(struct gauge_device *gauge_dev, char *battid);
+
+extern int gauge_dev_get_battname(struct gauge_device *gauge_dev, char *battname);
 
 extern int gauge_dev_get_charge_counter(struct gauge_device *gauge_dev, int *charge_counter);
 

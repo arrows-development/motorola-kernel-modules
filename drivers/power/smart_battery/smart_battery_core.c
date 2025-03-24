@@ -350,6 +350,7 @@ static enum power_supply_property batt_props[] = {
 	POWER_SUPPLY_PROP_TECHNOLOGY,
 	POWER_SUPPLY_PROP_SCOPE,
 	POWER_SUPPLY_PROP_ENERGY_EMPTY,
+	POWER_SUPPLY_PROP_MODEL_NAME,
 };
 
 static int batt_get_prop(struct power_supply *psy,
@@ -444,6 +445,9 @@ static int batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ENERGY_EMPTY:
 		val->intval = chip->vbat0_flag;
+		break;
+	case POWER_SUPPLY_PROP_MODEL_NAME:
+		val->strval = chip->battName;
 		break;
 	default:
 		return -EINVAL;
@@ -785,6 +789,25 @@ static int  tcmd_get_bat_id(void *input, int* battids)
 		if (strcmp(battery->gauge_dev->dev.kobj.name, "bms") == 0 ||
 			strcmp(battery->gauge_dev->dev.kobj.name, "main_battery") == 0)  {
 			ret = gauge_dev_get_battid(battery->gauge_dev, pbattids);
+		}
+	}
+
+	return ret;
+}
+
+static int smart_batt_get_bat_name(struct mmi_smart_battery *chip)
+{
+	struct mmi_battery_pack *battery = NULL;
+	int ret = 0;
+
+
+	list_for_each_entry(battery, &chip->battery_list, list) {
+		if (strcmp(battery->gauge_dev->dev.kobj.name, "bms") == 0 ||
+			strcmp(battery->gauge_dev->dev.kobj.name, "main_battery") == 0)  {
+			ret = gauge_dev_get_battname(battery->gauge_dev,chip->battName);
+			if (ret < 0) {
+				strlcpy(chip->battName,"Unknown",MAX_STR_LEN);
+			}
 		}
 	}
 
@@ -1310,6 +1333,7 @@ static int smart_battery_probe(struct platform_device *pdev)
 	ifc_ops_register(chip);
 #endif
 	battery_tcmd_register(chip);
+	smart_batt_get_bat_name(chip);
 	rc = sysfs_create_group(&chip->batt_psy->dev.kobj,
 				&smart_batt_attr_group);
 	if (rc)

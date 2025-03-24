@@ -188,6 +188,12 @@ struct battid_map {
 	const char *batt_profile_ver;
 };
 
+struct battid_map_alis {
+	const char *battid;
+	const char *battid_alis;
+};
+
+
 struct mmi_fg_chip {
 	struct device *dev;
 	struct i2c_client *client;
@@ -239,7 +245,9 @@ struct mmi_fg_chip {
 	int mcu_auth_code;
 
 	int battid_cnt;
+	int battid_alis_cnt;
 	struct battid_map *battid_table;
+	struct battid_map_alis *battid_table_alis;
 
 	u8 *fw_version;
 	u8 *fw_data;
@@ -791,8 +799,44 @@ static const char *get_battery_serialnumber(void)
 		mmi_info("Battsn = %s\n", battsn_buf);
 
 	of_node_put(np);
-
 	return battsn_buf;
+}
+
+#define MAX_STR_LEN 64
+int fg_get_battery_name(struct gauge_device *gauge_dev, char *battidmap)
+{
+    struct mmi_fg_chip *fg = dev_get_drvdata(&gauge_dev->dev);
+    const char *dev_sn = NULL;
+    int i;
+
+    if (!fg || !fg->battid_table || fg->battid_cnt == 0)
+        return -EPERM;
+
+    dev_sn = get_battery_serialnumber();
+    if (!dev_sn) {
+        strlcpy(battidmap, fg->battid_table[0].battid, MAX_STR_LEN);
+    } else {
+        for (i = 0; i < fg->battid_cnt; i++) {
+            if (!strcmp(dev_sn, fg->battid_table[i].battid)) {
+                strlcpy(battidmap, fg->battid_table[i].battid, MAX_STR_LEN);
+                break;
+            }
+        }
+
+        if (i == fg->battid_cnt) {
+            strlcpy(battidmap, fg->battid_table[0].battid, MAX_STR_LEN);
+        }
+    }
+
+    if(fg->battid_alis_cnt > 0) {
+        for(i = 0;i < fg->battid_alis_cnt; i++) {
+            if(!strcmp(battidmap,fg->battid_table_alis[i].battid)) {
+                strlcpy(battidmap,fg->battid_table_alis[i].battid_alis, MAX_STR_LEN);
+                break;
+            }
+        }
+    }
+    return fg->battid_alis_cnt;
 }
 
 static u8 *nfg1000_upgrade_read_firmware(char *bin_name, struct mmi_fg_chip *mmi_fg);
@@ -3205,6 +3249,7 @@ static struct gauge_ops nfg1000_gauge_ops = {
 	.ifc_change_clr= fg_ifc_change_clr,
 	.get_ifc_step = fg_get_ifc_step,
 	.get_ifc_step_num = fg_get_ifc_step_num,
+	.get_battname = fg_get_battery_name,
 };
 
 static int mmi_parse_dt(struct mmi_fg_chip *mmi_fg)
@@ -3257,6 +3302,32 @@ static int mmi_parse_dt(struct mmi_fg_chip *mmi_fg)
 				}
 				else {
 					mmi_fg->battid_cnt = count / 2;
+				}
+			}
+		}
+	}
+
+	count = of_property_count_strings(np, "mmi,batt-ids-map-alis");
+	if (count > 0) {
+		if (count % 2) {
+			mmi_err("%s Invalid profile-ids-map-alis in DT, rc=%d\n", __func__, count);
+			rtn = -EINVAL;
+		}
+		if (!rtn) {
+			mmi_fg->battid_table_alis = devm_kmalloc_array(&mmi_fg->client->dev, count / 2,
+							sizeof(struct battid_map_alis), GFP_KERNEL);
+			if (!mmi_fg->battid_table_alis)
+				rtn = -ENOMEM;
+			if (!rtn) {
+				rc = of_property_read_string_array(np, "mmi,batt-ids-map-alis",
+								(const char **)mmi_fg->battid_table_alis, count);
+				if (rc < 0) {
+					mmi_err("%s Failed to get batt-ids-list, rc=%d\n", __func__, rc);
+					devm_kfree(&mmi_fg->client->dev, mmi_fg->battid_table_alis);
+					rtn = -EINVAL;
+				}
+				else {
+					mmi_fg->battid_alis_cnt = count / 2;
 				}
 			}
 		}
