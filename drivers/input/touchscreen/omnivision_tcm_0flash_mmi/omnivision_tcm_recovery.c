@@ -870,7 +870,9 @@ static int recovery_write_flash(void)
 	int retval;
 	unsigned char *data_ptr;
 	unsigned int chunk_buf_size;
+#if 0
 	unsigned int chunk_data_size;
+#endif
 	unsigned int entries_written;
 	unsigned int entries_to_write;
 	struct ovt_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
@@ -881,7 +883,9 @@ static int recovery_write_flash(void)
 
 	chunk_buf_size = sizeof(recovery_hcd->chunk_buf);
 
+#if 0
 	chunk_data_size = chunk_buf_size - 1;
+#endif
 
 	recovery_hcd->chunk_buf[chunk_buf_size - 1] = F35_WRITE_CHUNK_COMMAND;
 

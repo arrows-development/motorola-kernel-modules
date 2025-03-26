@@ -5617,9 +5617,12 @@ static int ovt_tcm_remove(struct platform_device *pdev)
 
 static void ovt_tcm_shutdown(struct platform_device *pdev)
 {
+#if 0
 	int retval;
 
 	retval = ovt_tcm_remove(pdev);
+#endif
+	ovt_tcm_remove(pdev);
 }
 
 #ifdef CONFIG_PM

@@ -854,14 +854,18 @@ static int testing_device_id(void)
 static int testing_config_id(void)
 {
 	struct ovt_tcm_hcd *tcm_hcd = testing_hcd->tcm_hcd;
+#if 0
 	struct ovt_tcm_app_info *app_info;
+#endif
 	int i;
 
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"Start testing\n");
 	testing_hcd->result = false;
 
+#if 0
 	app_info = &tcm_hcd->app_info;
+#endif
 
 	testing_hcd->result = true;
 	for (i = 0; i < sizeof(config_id_limit); i++) {
@@ -1115,7 +1119,9 @@ static int testing_pt01_trx_trx_short(void)
 	int i, j;
 	int phy_pin;
 	bool do_pin_test = false;
+#if 0
 	struct ovt_tcm_app_info *app_info;
+#endif
 	struct ovt_tcm_hcd *tcm_hcd = testing_hcd->tcm_hcd;
 	unsigned int size;
 	unsigned char limit;
@@ -1130,7 +1136,9 @@ static int testing_pt01_trx_trx_short(void)
 			"Start testing\n");
 	testing_hcd->result = false;
 
+#if 0
 	app_info = &tcm_hcd->app_info;
+#endif
 
 #ifdef PT1_GET_PIN_ASSIGNMENT
 	satic_cfg_length = le2_to_uint(app_info->static_config_size);
@@ -1715,10 +1723,12 @@ int lcd_id;
 static int testing_do_testing(void)
 {
 	int retval;
-    int error_count = 0;
+	int error_count = 0;
+#if 0
 	unsigned int rows;
 	unsigned int cols;
 	struct ovt_tcm_app_info *app_info;
+#endif
 	struct ovt_tcm_hcd *tcm_hcd = testing_hcd->tcm_hcd;
 	tcm_hcd->b_is_doing_test_flag = true;
 	retval = tcm_hcd->reset_n_reinit(tcm_hcd, false, false);
@@ -1727,9 +1737,11 @@ static int testing_do_testing(void)
 		error_count++;
 		goto exit;
 	}
+#if 0
 	app_info = &tcm_hcd->app_info;
 	rows = le2_to_uint(app_info->num_of_image_rows);
 	cols = le2_to_uint(app_info->num_of_image_cols);
+#endif
 
 #ifdef LIMIT_FROM_CSV_FILE
     uint8_t file_path[256];

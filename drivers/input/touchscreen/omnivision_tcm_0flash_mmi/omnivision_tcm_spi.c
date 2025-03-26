@@ -832,6 +832,7 @@ static int ovt_tcm_spi_probe(struct spi_device *spi)
 	hw_if.bus_io = &bus_io;
 
 	spi->bits_per_word = 8;
+	spi->chip_select = 0;
 #ifdef CONFIG_OVT_MTK_SPI_TIME
 	spi->controller_data = (void *)&st_spi_ctrdata;
 	OVT_INFO("config cs_setuptime:%d", st_spi_ctrdata.cs_setuptime);
