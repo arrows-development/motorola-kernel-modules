@@ -1828,6 +1828,79 @@ static void bq25980_create_device_node(struct device *dev)
     device_create_file(dev, &dev_attr_vbus);
 }
 
+static int sgm41606s_enable_otg(struct bq25980_device *bq, bool enable)
+{
+	int ret = 0;
+	unsigned int val;
+
+	if(!enable) {
+		bq->otg_delay_mos_config = false;
+		ret = regmap_update_bits(bq->regmap, BQ25980_CHRGR_CTRL_2,
+				BQ25980_EN_OTG, 0);
+		if (ret) {
+			dev_err(bq->dev, "sgm41606s close en otg fail ret=%d", ret);
+			return ret;
+		}
+	} else {
+		ret = regmap_read(bq->regmap, BQ25980_CHRGR_CTRL_2, &val);
+		if (ret) {
+			dev_err(bq->dev, "sgm41606s_enable_otg Reg BQ25980_CHRGR_CTRL_2] fail ret=%d", ret);
+			return ret;
+		}
+		if ((val & (BQ25980_ENABLE_TYPEC_MOS | BQ25980_EN_OTG))
+			!= (BQ25980_ENABLE_TYPEC_MOS | BQ25980_EN_OTG))	 {
+			ret = regmap_update_bits(bq->regmap, BQ25980_CHRGR_CTRL_2,
+				BQ25980_EN_OTG, BQ25980_EN_OTG);
+			if (ret) {
+				dev_err(bq->dev, "sgm41606s_enable_otg  en otg fail ret=%d", ret);
+				return ret;
+			}
+			ret = regmap_update_bits(bq->regmap, BQ25980_CHRGR_CTRL_2,
+					BQ25980_DIS_MOS_BOTH, BQ25980_DIS_MOS_BOTH);
+			if (ret) {
+				dev_err(bq->dev, "sgm41606s_enable_otg dis mos both fail ret=%d", ret);
+				return ret;
+			}
+			udelay(1000);
+			ret = regmap_update_bits(bq->regmap, BQ25980_CHRGR_CTRL_2,
+					BQ25980_DIS_MOS_BOTH, 0);
+			if (ret) {
+				dev_err(bq->dev, "sgm41606s_enable_otg enable mos both fail ret=%d", ret);
+				return ret;
+			}
+			ret = regmap_update_bits(bq->regmap, BQ25980_CHRGR_CTRL_2,
+					BQ25980_ENABLE_TYPEC_MOS, BQ25980_ENABLE_TYPEC_MOS);
+			if (ret) {
+				dev_err(bq->dev, "sgm41606s_enable_otg enable otg typec mos fail ret=%d", ret);
+				return ret;
+			}
+			bq->otg_delay_mos_config = true;
+		}
+	}
+
+	return ret;
+}
+
+static int bq25980_enable_otg(struct charger_device *chg_dev, bool enable)
+{
+	int ret;
+	struct bq25980_device *bq = charger_get_data(chg_dev);
+	if (!bq) {
+		pr_err("bq25980 chip not valid\n");
+		return -ENODEV;
+	}
+
+	dev_info(bq->dev, "%s %d %d\n", __func__, enable, bq->mmi_disable_mux);
+	if (bq->part_no ==  SGM41606S_PART_NO && bq->mmi_disable_mux) {
+		ret = sgm41606s_enable_otg(bq, enable);
+		if (ret) {
+			dev_err(bq->dev, "%s enbale fail%d\n", __func__, enable);
+			return ret;
+		}
+	}
+
+	return 0;
+}
 static int bq25980_enable_chg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
@@ -2396,6 +2469,7 @@ static int bq25980_get_vmos_chg(struct charger_device *chg_dev, bool type, int *
 
 static const struct charger_ops bq25980_chg_ops = {
 	.enable = bq25980_enable_chg,
+	.is_enable_otg = bq25980_enable_otg,
 	.is_enabled = bq25980_is_chg_enabled,
 	.get_adc = bq25980_get_adc,
 	.set_vbusovp = bq25980_set_vbusovp,
