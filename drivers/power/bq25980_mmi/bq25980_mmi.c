@@ -1828,6 +1828,7 @@ static void bq25980_create_device_node(struct device *dev)
     device_create_file(dev, &dev_attr_vbus);
 }
 
+#ifdef CONFIG_MOTO_SGM41606S_ENABLE_OTG
 static int sgm41606s_enable_otg(struct bq25980_device *bq, bool enable)
 {
 	int ret = 0;
@@ -1901,6 +1902,8 @@ static int bq25980_enable_otg(struct charger_device *chg_dev, bool enable)
 
 	return 0;
 }
+#endif /* CONFIG_MOTO_SGM41606S_ENABLE_OTG */
+
 static int bq25980_enable_chg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
@@ -2469,7 +2472,9 @@ static int bq25980_get_vmos_chg(struct charger_device *chg_dev, bool type, int *
 
 static const struct charger_ops bq25980_chg_ops = {
 	.enable = bq25980_enable_chg,
+#ifdef CONFIG_MOTO_SGM41606S_ENABLE_OTG
 	.is_enable_otg = bq25980_enable_otg,
+#endif
 	.is_enabled = bq25980_is_chg_enabled,
 	.get_adc = bq25980_get_adc,
 	.set_vbusovp = bq25980_set_vbusovp,
