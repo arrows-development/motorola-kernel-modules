@@ -230,6 +230,16 @@ int gauge_dev_get_battname(struct gauge_device *gauge_dev, char *battname)
 }
 EXPORT_SYMBOL(gauge_dev_get_battname);
 
+int gauge_dev_get_cur_batt_id(struct gauge_device *gauge_dev, char *curbattid)
+{
+	if (gauge_dev != NULL && gauge_dev->ops != NULL &&
+			gauge_dev->ops->get_cur_batt_id)
+		return gauge_dev->ops->get_cur_batt_id(gauge_dev, curbattid);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(gauge_dev_get_cur_batt_id);
+
 int gauge_dev_get_charge_counter(struct gauge_device *gauge_dev, int *charge_counter)
 {
 	if (gauge_dev != NULL && gauge_dev->ops != NULL &&

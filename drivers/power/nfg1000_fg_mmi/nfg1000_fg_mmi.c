@@ -151,6 +151,7 @@ enum mmi_fg_mac_cmd {
 	FG_MAC_CMD_SEAL		= 0x0030,
 	FG_MAC_CMD_DEV_RESET	= 0x0041,
 	FG_MAC_CMD_POWEROFF_THRESHOLD	= 0x0050,
+	FG_MAC_CMD_BATT_SERIALNUM_MAP	= 0x0070,
 	FG_MAC_CMD_TEMPERATURE	= 0x00C0,
 	FG_MAC_CMD_ENTER_ROM	= 0x0F00,
 	FG_MAC_CMD_PARAMS_VER	= 0x440B,
@@ -2546,6 +2547,28 @@ int fg_get_cycle_count(struct gauge_device *gauge_dev, int *cycle_count)
 	return 0;
 }
 
+int fg_get_cur_batt_id(struct gauge_device *gauge_dev, char* curbattid)
+{
+	struct mmi_fg_chip *fg = dev_get_drvdata(&gauge_dev->dev);
+	int count = 0;
+
+	int ret = 0;
+	u8 battid_read[32] = {0};
+	const char *dev_sn = NULL;
+
+	ret = nfg1000_i2c_BLOCK_command_read_with_CHECKSUM(fg, FG_MAC_CMD_BATT_SERIALNUM_MAP, battid_read, 32);
+	if(ret) {
+		mmi_err(": From fg ic read the batt serialnum error!\n");
+		return -1;
+	}
+
+	dev_sn = battid_read;
+	count += sprintf(curbattid, "%s", dev_sn);
+
+	mmi_info("read current batt id, now curbattid is %s.\n", curbattid);
+	return count;
+}
+
 void fg_dump_registers(struct mmi_fg_chip *mmi);
 
 static int battery_chargeType_to_FG(struct mmi_fg_chip *mmi, int ffc_enable)
@@ -3250,6 +3273,7 @@ static struct gauge_ops nfg1000_gauge_ops = {
 	.get_ifc_step = fg_get_ifc_step,
 	.get_ifc_step_num = fg_get_ifc_step_num,
 	.get_battname = fg_get_battery_name,
+	.get_cur_batt_id = fg_get_cur_batt_id,
 };
 
 static int mmi_parse_dt(struct mmi_fg_chip *mmi_fg)

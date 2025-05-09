@@ -1099,6 +1099,29 @@ static ssize_t first_usage_date_store(struct device *dev,
 
 static DEVICE_ATTR(first_usage_date, 0644, first_usage_date_show, first_usage_date_store);
 
+static ssize_t cur_batt_id_show(struct device *dev,
+                                struct device_attribute *attr, char *buf)
+{
+	int ret = 0;
+	char curbattid[MAX_STR_LEN];
+	struct mmi_battery_pack *battery = NULL;
+	if (!this_chip) {
+                pr_err("mmi_charger: chip is invalid\n");
+                return -ENODEV;
+        }
+
+	list_for_each_entry(battery, &this_chip->battery_list, list) {
+		if (strcmp(battery->gauge_dev->dev.kobj.name, "bms") == 0 ||
+				strcmp(battery->gauge_dev->dev.kobj.name, "main_battery") == 0) {
+			gauge_dev_get_cur_batt_id(battery->gauge_dev, curbattid);
+			mmi_info(this_chip, "read current batt id, now cur_batt_id is %s.\n", curbattid);
+		}
+	}
+	ret = sprintf(buf, "%s\n", curbattid);
+	return ret;
+}
+static DEVICE_ATTR(cur_batt_id, S_IRUGO, cur_batt_id_show, NULL);
+
 static ssize_t manufacturing_date_show(struct device *dev,
 			struct device_attribute *attr,
 			char *buf)
@@ -1183,6 +1206,7 @@ static struct attribute *  smart_batt_att[] = {
 #ifdef CONFIG_MOTO_1200_CYCLE
 	&dev_attr_battery_cycle.attr,
 #endif
+	&dev_attr_cur_batt_id.attr,
 	NULL,
 };
 
