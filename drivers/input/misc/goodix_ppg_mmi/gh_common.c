@@ -538,6 +538,7 @@ static long gh_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		}
 
 		gh_dev->system_status = 0;
+		gh_hw_power_enable(gh_dev, 0);
 		gh_debug(INFO_LOG, "%s: gh exit finished ======\n", __func__);
 		break;
 
@@ -837,6 +838,8 @@ static int gh_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	gh_dev->probe_finish = 1;
 	gh_dev->is_sleep_mode = 0;
 	gh_debug(INFO_LOG, "%s health goodix probe finished\n", __func__);
+	/*disable the power*/
+	gh_hw_power_enable(gh_dev, 0);
 
 	FUNC_EXIT();
 	return 0;

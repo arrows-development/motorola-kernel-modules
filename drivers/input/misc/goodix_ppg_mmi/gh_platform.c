@@ -45,7 +45,7 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
 	  gh_debug(ERR_LOG, "%s, Failed to request gh_vdd_leds GPIO. rc = %d\n", __func__, rc);
 	  return -1;
     }
-    gpio_direction_output(gh_dev->gh_vdd_leds, 1);
+    gpio_direction_output(gh_dev->gh_vdd_leds, 0);
 
     /*get pwr resource*/
     if (of_property_read_bool(np,"vdd-ctrl-support")) {
@@ -65,8 +65,8 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
 	    gh_debug(ERR_LOG, "%s, Failed to request gh_vdd GPIO. rc = %d\n", __func__, rc);
 	    return -1;
         }
-        gpio_direction_output(gh_dev->gh_vdd, 1);
-        msleep(500);
+        gpio_direction_output(gh_dev->gh_vdd, 0);
+        //msleep(500);
     } else {
         gh_dev->vdd_supply = regulator_get(dev, "goodix,vdd");
         if (IS_ERR(gh_dev->vdd_supply)) {
@@ -77,6 +77,7 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
             }
         } else {
             gh_debug(ERR_LOG, "%s, get vdd regulator\n", __func__);
+#if 0
             rc = regulator_enable(gh_dev->vdd_supply);
             if (rc) {
                 regulator_put(gh_dev->vdd_supply);
@@ -87,6 +88,7 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
                 regulator_is_enabled(gh_dev->vdd_supply) ?
                 "on" : "off");
             msleep(500);
+#endif
         }
     }
     /*get io resource*/
@@ -107,8 +109,8 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
 	    gh_debug(ERR_LOG, "%s, Failed to request gh_vdd_id GPIO. rc = %d\n", __func__, rc);
 	    return -1;
         }
-        gpio_direction_output(gh_dev->gh_vdd_id, 1);
-        msleep(50);
+        gpio_direction_output(gh_dev->gh_vdd_id, 0);
+        //msleep(50);
     } else {
         gh_dev->vddio_supply = regulator_get(dev, "goodix,vddio");
         if (IS_ERR(gh_dev->vddio_supply)) {
@@ -119,6 +121,7 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
             }
         } else {
             gh_debug(ERR_LOG, "%s, get vddio regulator\n", __func__);
+#if 0
             rc = regulator_enable(gh_dev->vddio_supply);
             if (rc) {
                 regulator_put(gh_dev->vddio_supply);
@@ -129,6 +132,7 @@ int gh_get_gpio_dts_info(struct gh_device *gh_dev)
                 regulator_is_enabled(gh_dev->vddio_supply) ?
                 "on" : "off");
             msleep(50);
+#endif
         }
     }
     /*get reset resource*/
@@ -178,7 +182,7 @@ void gh_cleanup_info(struct gh_device *gh_dev)
 	}
 */
 }
-
+#if 0
 static void gh_hw_power_enable_common(struct device *dev, const char *name, gh_power_cfg *power_cfg, u8 onoff)
 {
 	/* TODO: LDO configure */
@@ -236,17 +240,82 @@ static void gh_hw_power_enable_common(struct device *dev, const char *name, gh_p
 exit:
 	return;
 }
-
+#endif
 void gh_hw_power_enable(struct gh_device *gh_dev, u8 onoff)
 {
-#if (GH_SUPPORT_BUS_SPI == GH_SUPPORT_BUS)
-	struct device *dev = &gh_dev->spi->dev;
-#elif (GH_SUPPORT_BUS_I2C == GH_SUPPORT_BUS)
-	struct device *dev = &gh_dev->client->dev;
-#endif
+	if (onoff) {
+		gpio_direction_output(gh_dev->gh_vdd_leds, 1);
 
-	gh_hw_power_enable_common(dev, GH_POWER_VDD, &g_vdd_cfg, onoff);
-	gh_hw_power_enable_common(dev, GH_POWER_VDD_IO, &g_vdd_io_cfg, onoff);
+		if (!gh_dev->vdd_ctrl_support) {
+			gpio_direction_output(gh_dev->gh_vdd, 1);
+		} else {
+			/*if (regulator_is_enabled(gh_dev->vdd_supply)) {
+				pr_info("Vdd is already enabled!\n");
+			} else {*/
+				if (regulator_enable(gh_dev->vdd_supply)) {
+					regulator_put(gh_dev->vdd_supply);
+					gh_debug(ERR_LOG, "%s, Failed to enable vdd regulator\n", __func__);
+				} else {
+					gh_debug(ERR_LOG,"enable vdd regulator is %s\n",
+						regulator_is_enabled(gh_dev->vdd_supply) ?
+						"on" : "off");
+				}
+			//}
+		}
+
+		if (!gh_dev->vddio_ctrl_support) {
+			gpio_direction_output(gh_dev->gh_vdd_id, 1);
+		} else {
+			/*if (regulator_is_enabled(gh_dev->vddio_supply)) {
+				pr_info("VddIO is already enabled!\n");
+			} else {*/
+				if (regulator_enable(gh_dev->vddio_supply)) {
+					regulator_put(gh_dev->vddio_supply);
+					gh_debug(ERR_LOG, "%s, Failed to enable vddio regulator\n", __func__);
+				} else {
+					gh_debug(ERR_LOG,"enable vddio regulator is %s\n",
+						regulator_is_enabled(gh_dev->vddio_supply) ?
+						"on" : "off");
+				}
+			//}
+		}
+		mdelay(10);
+	} else {
+		gpio_direction_output(gh_dev->gh_vdd_leds, 0);
+		if (!gh_dev->vdd_ctrl_support) {
+			gpio_direction_output(gh_dev->gh_vdd, 0);
+		} else {
+			/*if (!regulator_is_enabled(gh_dev->vdd_supply)) {
+				pr_info("VDD is already disabled!\n");
+			} else {*/
+				if (regulator_disable(gh_dev->vdd_supply)) {
+					regulator_put(gh_dev->vdd_supply);
+					gh_debug(ERR_LOG, "%s, Failed to disable vdd regulator\n", __func__);
+				} else {
+					gh_debug(ERR_LOG,"disable vdd regulator is %s\n",
+						regulator_is_enabled(gh_dev->vdd_supply) ?
+						"on" : "off");
+				}
+			//}
+		}
+
+		if (!gh_dev->vddio_ctrl_support) {
+			gpio_direction_output(gh_dev->gh_vdd_id, 0);
+		} else {
+			/*if (!regulator_is_enabled(gh_dev->vddio_supply)) {
+				pr_info("VDDIO is already disabled!\n");
+			} else {*/
+				if (regulator_disable(gh_dev->vddio_supply)) {
+					regulator_put(gh_dev->vddio_supply);
+					gh_debug(ERR_LOG, "%s, Failed to disable vddio regulator\n", __func__);
+				} else {
+					gh_debug(ERR_LOG,"disable vddio regulator is %s\n",
+						regulator_is_enabled(gh_dev->vddio_supply) ?
+						"on" : "off");
+				}
+			//}
+		}
+	}
 }
 
 void gh_hw_reset(struct gh_device *gh_dev, u8 delay)
