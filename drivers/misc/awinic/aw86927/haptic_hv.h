@@ -683,6 +683,7 @@ struct aw_haptic {
 
 	int vmax;
 	int gain;
+	int upgain; /* this is AIDL send valume */
 	int rate;
 	int width;
 	int state;

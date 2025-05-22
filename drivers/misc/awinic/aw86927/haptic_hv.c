@@ -548,14 +548,15 @@ static void ram_vbat_comp(struct aw_haptic *aw_haptic, bool flag)
 				temp_gain = 128 * AW_VBAT_REFER / AW_VBAT_MIN;
 				aw_dbg("gain limit=%d", temp_gain);
 			}
+			temp_gain = temp_gain * aw_haptic->upgain / 0x80;
 			aw_haptic->func->set_gain(aw_haptic, temp_gain);
-			aw_info("ram vbat comp open");
+			aw_info("ram vbat comp open, gain: %d", temp_gain);
 		} else {
-			aw_haptic->func->set_gain(aw_haptic, aw_haptic->gain);
+			aw_haptic->func->set_gain(aw_haptic, aw_haptic->upgain);
 			aw_info("ram vbat comp close");
 		}
 	} else {
-		aw_haptic->func->set_gain(aw_haptic, aw_haptic->gain);
+		aw_haptic->func->set_gain(aw_haptic, aw_haptic->upgain);
 		aw_info("ram vbat comp close");
 	}
 }
@@ -1565,6 +1566,9 @@ static int richtap_file_mmap(struct file *filp, struct vm_area_struct *vma)
 	vm_flags_t vm_flags = calc_vm_prot_bits(PROT_READ|PROT_WRITE, 0) | calc_vm_flag_bits(MAP_SHARED);
 #endif
 	vm_flags |= current->mm->def_flags | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC| VM_SHARED | VM_MAYSHARE;
+	if (vma == NULL)
+		return -EPERM;
+
 	if (vma && (pgprot_val(vma->vm_page_prot) != pgprot_val(vm_get_page_prot(vm_flags))))
 		return -EPERM;
 
@@ -2269,7 +2273,7 @@ static ssize_t gain_show(struct device *dev, struct device_attribute *attr, char
 	cdev_t *cdev = dev_get_drvdata(dev);
 	struct aw_haptic *aw_haptic = container_of(cdev, struct aw_haptic, vib_dev);
 
-	return snprintf(buf, PAGE_SIZE, "gain = 0x%02X\n", aw_haptic->gain);
+	return snprintf(buf, PAGE_SIZE, "gain = 0x%02X\n", aw_haptic->upgain);
 }
 
 static ssize_t gain_store(struct device *dev, struct device_attribute *attr,
@@ -2285,8 +2289,8 @@ static ssize_t gain_store(struct device *dev, struct device_attribute *attr,
 		return rc;
 	aw_info("value=0x%02x", val);
 	mutex_lock(&aw_haptic->lock);
-	aw_haptic->gain = val;
-	aw_haptic->func->set_gain(aw_haptic, aw_haptic->gain);
+	aw_haptic->upgain = val;
+	//aw_haptic->func->set_gain(aw_haptic, aw_haptic->gain);
 	mutex_unlock(&aw_haptic->lock);
 
 	return count;
