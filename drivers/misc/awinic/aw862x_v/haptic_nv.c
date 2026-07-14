@@ -584,7 +584,7 @@ static struct i2c_driver haptic_nv_i2c_driver = {
 		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(haptic_nv_dt_match),
 	},
-	.probe = haptic_nv_i2c_probe,
+	.probe_new = haptic_nv_i2c_probe,
 	.remove = haptic_nv_i2c_remove,
 	.id_table = haptic_nv_i2c_id,
 };
