@@ -15,6 +15,7 @@ define_mgk_ko(
         "Makefile",
         "Makefile.include",
     ]) + [
+        "//kernel_device_modules-6.1:mtk_public_headers",
         "//motorola/kernel/modules:public_headers",
     ],
 

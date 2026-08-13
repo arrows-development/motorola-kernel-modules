@@ -64,7 +64,7 @@
 /*
  * At most allow setting 10 tasks
  */
-#define TASK_SIZE_MAX 10
+#define SKB_SCHED_TASK_MAX 10
 #define PRIO_STRING 10
 #define INVALID 0xFF
 /*
@@ -79,10 +79,10 @@
 #define DSCP_LIST "dscp_list"
 
 struct proc_dir_entry *proc_entry;
-static char task_array_comm[TASK_SIZE_MAX][TASK_COMM_LEN] = {{0}};
-static u32 task_array_uid[TASK_SIZE_MAX] = {0};
-static char task_array_prio[TASK_SIZE_MAX][PRIO_STRING] = {{0}};
-static u8 task_array_dscp[TASK_SIZE_MAX] = {0};
+static char task_array_comm[SKB_SCHED_TASK_MAX][TASK_COMM_LEN] = {{0}};
+static u32 task_array_uid[SKB_SCHED_TASK_MAX] = {0};
+static char task_array_prio[SKB_SCHED_TASK_MAX][PRIO_STRING] = {{0}};
+static u8 task_array_dscp[SKB_SCHED_TASK_MAX] = {0};
 static int task_num = 0;
 
 static bool enable_debug = false;
@@ -154,7 +154,7 @@ static ssize_t app_list_write(struct file *file, const char __user *buf, size_t 
 	 * sscanf is different with glibc. A field width is required when using %[^], we
 	 * set it to 16 since TASK_COMM_LEN is 16. Refer to lib/vsprinf.c
 	 */
-	while(i < TASK_SIZE_MAX && sscanf(buffer + offset, "%16[^,], %n", task_array_comm[i], &read_count) > 0) {
+	while(i < SKB_SCHED_TASK_MAX && sscanf(buffer + offset, "%16[^,], %n", task_array_comm[i], &read_count) > 0) {
 		/* The max read count should be TASK_COMM_LEN + a char of ','*/
 		if (read_count > TASK_COMM_LEN + 1 || ((*(buffer + offset + read_count - 1) != ',') &&
 				(count != offset + read_count))) {
@@ -177,7 +177,7 @@ static ssize_t app_list_write(struct file *file, const char __user *buf, size_t 
 static int app_list_show(struct seq_file *m, void *v)
 {
 	int i;
-	for (i = 0; i < TASK_SIZE_MAX; i++) {
+	for (i = 0; i < SKB_SCHED_TASK_MAX; i++) {
 		seq_printf(m, "app_list[%d][%d][%s]\n", i, task_array_uid[i], task_array_comm[i]);
 	}
 	return 0;
@@ -233,7 +233,7 @@ static ssize_t priority_list_write(struct file *file, const char __user *buf, si
 static int priority_list_show(struct seq_file *m, void *v)
 {
 	int i;
-	for (i = 0; i < TASK_SIZE_MAX; i++) {
+	for (i = 0; i < SKB_SCHED_TASK_MAX; i++) {
 		seq_printf(m, "priority_list[%d] %s \n", i, task_array_prio[i]);
 	}
 	return 0;
@@ -291,7 +291,7 @@ static ssize_t dscp_list_write(struct file *file, const char __user *buf, size_t
 static int dscp_list_show(struct seq_file *m, void *v)
 {
 	int i;
-	for (i = 0; i < TASK_SIZE_MAX; i++) {
+	for (i = 0; i < SKB_SCHED_TASK_MAX; i++) {
 		seq_printf(m, "dscp_list[%d] 0x%02x \n", i, task_array_dscp[i]);
 	}
 	return 0;
